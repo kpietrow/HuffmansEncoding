@@ -17,11 +17,8 @@ public class Encode {
 
         List<Node> nodes = new LinkedList<Node>();  // To hold nodes of characters and values
         generateNodes(characterCount, nodes);   // Populate nodes
+        nodes.add(new Node('\u0000', 1));          // Add our EOF node. Here, it will be the code for NUL (0)
 
-        /*
-        for (Node node : nodes) {
-            System.out.println(node.name + " " + node.value);
-        }*/
 
         // Generate Huffman tree, and return its nodes
         nodes = treeGeneration(nodes);
@@ -30,13 +27,30 @@ public class Encode {
         System.out.println("\n");
 
         // Retrieve leaf nodes, and set their codes
-        List<Node> huffmanNodes = traverseToFindHuffmanCodes(new ArrayList<Node>(), nodes.get(0), new BitSet(), 0);
+        List<Node> huffmanNodes = traverseToFindHuffmanCodes(new ArrayList<Node>(), nodes.get(0), "", 0);
 
 
         for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getCode());
         }
 
+        System.out.println();
+
+        // Sort the Nodes by our custom compareTo method
+        Collections.sort(huffmanNodes);
+
+        for (int i = 0; i < huffmanNodes.size(); i++) {
+            System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getCode());
+        }
+
+        // Generate Canonical Codes
+        generateCanonicalCodes(huffmanNodes);
+
+        System.out.println();
+
+        for (int i = 0; i < huffmanNodes.size(); i++) {
+            System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode());
+        }
 
     }
 
@@ -86,9 +100,57 @@ public class Encode {
         return nodes;
     }
 
-    private static void generateCanonicalCodes (Map<Node, Integer> lengthMap) {
 
-        // Sort them!
+    /**
+     * Generates the canonical Huffman codes from a List of nodes
+     *
+     * @param huffmanNodes  the lists of nodes to generate canonical Huffman codes
+     */
+    private static void generateCanonicalCodes (List<Node> huffmanNodes) {
+
+        int code = 0;
+        String stringCode = "";
+        int previousCodeLength = huffmanNodes.get(0).getCode().length();
+
+        for (int i = 0; i < huffmanNodes.size(); i++) {
+            // Convert the code to binary
+            stringCode = Integer.toBinaryString(code);
+
+            // Concat 0's to the front until it's the correct length
+            for (; stringCode.length() < previousCodeLength ;) {
+                stringCode = "0" + stringCode;
+            }
+
+            // Handle if this code is shorter than the previous
+            if (stringCode.length() > huffmanNodes.get(i).getCode().length()) {
+                // Splice the current code string
+                stringCode = stringCode.substring(0, huffmanNodes.get(i).getCode().length());
+
+                int binaryCount = 1;
+                code = 0;
+
+                // Adjust the code for the next node
+                for (int j = stringCode.length() - 1; j >= 0; j--) {
+
+                    // If the string code is 1 at a location, add it's binary equivalent
+                    if (Integer.parseInt(Character.toString(stringCode.charAt(j))) == 1) {
+                        code = code + binaryCount;
+                    }
+
+                    binaryCount = binaryCount * 2;
+                }
+
+            }
+
+            // Update the node
+            huffmanNodes.get(i).setFinalCode(stringCode);
+
+            // Update the previous code length
+            previousCodeLength = huffmanNodes.get(i).getCode().length();
+
+            // Increment the code amount
+            code++;
+        }
 
 
     }
@@ -101,7 +163,7 @@ public class Encode {
      * @param currentCode   the current BitSet code for the Huffman tree
      * @return
      */
-    private static List<Node> traverseToFindHuffmanCodes (List<Node> nodeList, Node node, BitSet currentCode, int depth) {
+    private static List<Node> traverseToFindHuffmanCodes (List<Node> nodeList, Node node, String currentCode, int depth) {
 
         if (node.getLeft() == null && node.getRight() == null) {
 
@@ -109,19 +171,19 @@ public class Encode {
             if (depth == 0) {
                 nodeList.add(node);
             } else {
-                node.setCode(currentCode.get(0, currentCode.size() - 1));
+                node.setCode(currentCode);
                 nodeList.add(node);
             }
 
         } else {
+            depth++;
 
             if (node.getLeft() != null) {
-                currentCode.set(depth, false);
-                traverseToFindHuffmanCodes(nodeList, node.getLeft(), currentCode, ++depth);;
+                traverseToFindHuffmanCodes(nodeList, node.getLeft(), currentCode + "0", depth);;
+            }
 
-            } if (node.getRight() != null){
-                currentCode.set(depth, true);
-                traverseToFindHuffmanCodes(nodeList, node.getRight(), currentCode, ++depth);
+            if (node.getRight() != null){
+                traverseToFindHuffmanCodes(nodeList, node.getRight(), currentCode + "1", depth);
             }
         }
 
@@ -187,24 +249,64 @@ public class Encode {
     }
 
 
-
+    /**
+     * A helper method to print out a Huffman tree
+     *
+     * @param node  The current node
+     * @param depth The current depth
+     */
     private static void printTree (Node node, int depth) {
-        if (node.getLeft() == null && node.getRight() == null) {
-            System.out.println();
-            for (int i = depth; i > 0; i--) {
-                System.out.print("  ");
-            }
-            System.out.print(node.getName());
+        System.out.println();
+        for (int i = depth; i > 0; i--) {
+            System.out.print("  ");
+        }
+        System.out.print(node.getName());
 
-        } else {
+        if (node.getLeft() != null && node.getRight() != null) {
+            depth++;
 
             if (node.getLeft() != null) {
-                printTree(node.getLeft(), ++depth);;
+                printTree(node.getLeft(), depth);;
 
-            } if (node.getRight() != null){
-                printTree(node.getRight(), ++depth);
+            }
+
+            if (node.getRight() != null){
+                printTree(node.getRight(), depth);
             }
         }
+    }
+
+    private static int greatestDepth (Node node, int depth) {
+        depth++;
+
+        if (node.getLeft() != null && node.getRight() != null) {
+            int depth1 = 0;
+            int depth2 = 0;
+
+            // Get depth of left side of node's children
+            if (node.getLeft() != null) {
+                depth1 = greatestDepth(node.getLeft(), depth);;
+
+            }
+
+            // Get depth of the right side of node's children
+            if (node.getRight() != null){
+                depth2 = greatestDepth(node.getRight(), depth);
+            }
+
+            // Find the greatest depth
+            if (depth1 > depth2) {
+                if (depth < depth1) {
+                    depth = depth1;
+                }
+            } else {
+                if (depth < depth2) {
+                    depth = depth2;
+                }
+            }
+        }
+
+        return depth;
     }
 
 }

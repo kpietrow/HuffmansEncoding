@@ -4,12 +4,14 @@ import java.util.Comparator;
 /**
  * Created by Kevin Pietrow on 4/22/15.
  */
-public class Node implements Comparator<Node> {
+public class Node implements Comparable<Node> {
     Node left = null;  // The two possible children
     Node right = null;
     Character name = '-';
     int value = 0;
-    BitSet code = new BitSet();
+    String code = "";
+    String finalCode = "";
+
 
     /**
      * For creating branch nodes
@@ -31,15 +33,15 @@ public class Node implements Comparator<Node> {
         value = valueOf;
     }
 
-    public int compare (Node n, Node m) {
-        int length1 = n.getCode().length();
-        int length2 = m.getCode().length();
-        int i = length1 > length2 ? 1 : length1 < length2 ? -1 : 0;
+    public int compareTo (Node n) {
+        int length1 = this.getCode().length();
+        int length2 = n.getCode().length();
+        int i = length1 > length2 ? -1 : length1 < length2 ? 1 : 0;
 
         if (i != 0)
             return i;
 
-        i = n.getName().compareTo(m.getName());
+        i = this.getName().compareTo(n.getName());
         return i;
     }
 
@@ -103,16 +105,30 @@ public class Node implements Comparator<Node> {
      *
      * @return  the bit code
      */
-    public BitSet getCode () {
+    public String getCode () {
         return code;
     }
 
     /**
-     * Sets the value of the nodes bit code
+     * Sets the value of the node's bit code
      *
      * @param newCode   the value to set it to
      */
-    public void setCode (BitSet newCode) {
+    public void setCode (String newCode) {
         code = newCode;
     }
+
+    /**
+     * Set the value of the node's final code
+     *
+     * @param code  the value of the final code
+     */
+    public void setFinalCode (String code) { finalCode = code; }
+
+    /**
+     * Get the value of the node's final code
+     *
+     * @return finalCode  the value of the final code
+     */
+    public String getFinalCode () { return finalCode; }
 }
