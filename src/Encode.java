@@ -17,8 +17,11 @@ public class Encode {
 
         List<Node> nodes = new LinkedList<Node>();  // To hold nodes of characters and values
         generateNodes(characterCount, nodes);   // Populate nodes
-        nodes.add(new Node('\u0000', 1));          // Add our EOF node. Here, it will be the code for NUL (0)
+        nodes.add(0, new Node('\u0000', 1));          // Add our EOF node
 
+        for (int i = 0; i < nodes.size(); i++) {
+            System.out.println("node char: " + nodes.get(i).getName() + ", frequency: " + nodes.get(i).getValue());
+        }
 
         // Generate Huffman tree, and return its nodes
         nodes = treeGeneration(nodes);
@@ -49,7 +52,82 @@ public class Encode {
         System.out.println();
 
         for (int i = 0; i < huffmanNodes.size(); i++) {
-            System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode());
+            System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode() + ", frequency: " + huffmanNodes.get(i).getValue());
+        }
+
+        // Store for effective lookup
+        Map<Character, String> charToCodes = new HashMap<Character, String>();
+        storeCodes(charToCodes, nodes);
+
+        // Write it to the file!
+        writeToFile(charToCodes, nodes, sourcefile, "test.huf");
+    }
+
+    /**
+     * Writes the canonical tree and the coded data to an output file
+     *
+     * @param map   the map of characters to Huffman codes
+     * @param nodes the list of nodes in the huffman tree
+     * @param sourcefile    the source file
+     * @param outputfile    the file to write to
+     */
+    private static void writeToFile (Map<Character, String> map, List<Node> nodes, String sourcefile, String outputfile) {
+
+        // Write the canonical tree
+        // Get a Writer
+        Writer writer = null;
+
+        try {
+            // Get our BufferedWriter all nice and set up
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputfile), "utf-8"));
+            writer.write();
+
+
+        } catch (IOException ex) {
+            System.out.println("ERROR in writing to the file");
+
+
+        } finally {
+            try {
+                writer.close();
+            } catch (Exception ex) {
+
+            }
+        }
+
+        Charset charset = Charset.defaultCharset();
+
+        // Construct the methods to retrieve the file's information
+        try (InputStream in = new FileInputStream(sourcefile)) {
+
+            Reader reader = new InputStreamReader(in, charset);
+
+            int data;
+            char character;
+
+            // Iterate over the file
+            while ((data = reader.read()) != -1) {
+                character = (char) data;
+
+
+            }
+
+            reader.close();
+
+        } catch (Exception e) {
+            System.out.println("Error reading in information");
+        }
+
+    }
+
+    /**
+     * Stores the node's character and their final code in a Map
+     */
+    private static void storeCodes (Map<Character, String> map, List<Node> nodes) {
+
+        // Iterate over each node
+        for (Node node : nodes) {
+            map.put(node.getName(), node.getFinalCode());
         }
 
     }
@@ -89,6 +167,10 @@ public class Encode {
 
             // Construct the new node
             Node secondSmallest = nodes.remove(index);
+
+            System.out.println("first node: " + smallest.getName() + ", second: " + secondSmallest.getName() + " value: " + smallest.getValue() + secondSmallest.getValue());
+
+
             Node newNode = new Node(smallest.getValue() + secondSmallest.getValue());
             newNode.setLeft(smallest);
             newNode.setRight(secondSmallest);
