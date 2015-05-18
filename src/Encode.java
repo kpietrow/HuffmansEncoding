@@ -26,41 +26,40 @@ public class Encode {
         // Generate Huffman tree, and return its nodes
         nodes = treeGeneration(nodes);
 
-        printTree(nodes.get(0), 0);
-        System.out.println("\n");
+        //printTree(nodes.get(0), 0);
 
         // Retrieve leaf nodes, and set their codes
         List<Node> huffmanNodes = traverseToFindHuffmanCodes(new ArrayList<Node>(), nodes.get(0), "", 0);
 
 
-        for (int i = 0; i < huffmanNodes.size(); i++) {
+        /*for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getCode());
-        }
+        }*/
 
         System.out.println();
 
         // Sort the Nodes by our custom compareTo method
         Collections.sort(huffmanNodes);
 
-        for (int i = 0; i < huffmanNodes.size(); i++) {
+        /*for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getCode());
-        }
+        }*/
 
         // Generate Canonical Codes
         generateCanonicalCodes(huffmanNodes);
 
         System.out.println();
 
-        for (int i = 0; i < huffmanNodes.size(); i++) {
+        /*for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode() + ", frequency: " + huffmanNodes.get(i).getValue());
-        }
+        }*/
 
         // Store for effective lookup
         Map<Character, String> charToCodes = new HashMap<Character, String>();
-        storeCodes(charToCodes, nodes);
+        storeCodes(charToCodes, huffmanNodes);
 
         // Write it to the file!
-        writeToFile(charToCodes, nodes, sourcefile, "test.huf");
+        writeToFile(charToCodes, huffmanNodes, sourcefile, "test.huf");
     }
 
     /**
@@ -73,19 +72,84 @@ public class Encode {
      */
     private static void writeToFile (Map<Character, String> map, List<Node> nodes, String sourcefile, String outputfile) {
 
-        // Write the canonical tree
-        // Get a Writer
-        Writer writer = null;
+        DataOutputStream writer = null;
+        String temp;
 
+        // Write the canonical tree
         try {
-            // Get our BufferedWriter all nice and set up
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputfile), "utf-8"));
-            writer.write();
+            // Get our DataOutputStream all nice and set up
+            writer = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputfile)));
+            writer.write(nodes.size());
+
+            // Write the canonical information
+            for (int i = 0; i < nodes.size(); i++) {
+                writer.writeByte((int) nodes.get(i).getName());
+                writer.writeByte(nodes.get(i).getFinalCode().length());
+            }
+
+            // Write the file information
+            Charset charset = Charset.defaultCharset();
+            InputStream in = new FileInputStream(sourcefile);
+            Reader reader = new InputStreamReader(in, charset);
+            StringBuilder sb = new StringBuilder();
+
+            int data;
+            byte[] output = new byte[]{};
+
+            // Iterate over the file, append binary output to StringBuilder
+            while ((data = reader.read()) != -1) {
+               sb.append(map.get((char) data));
+            }
+
+            // Append the EOF symbol
+            sb.append(map.get('\u0000'));
+
+            // The byte to add to the writer
+            byte[] guineaPig = new byte[] {0x00};
+
+            // Set up it's first bit
+            guineaPig[0] = (byte) (guineaPig[0] << 1);
+            guineaPig[0] |= (int) sb.charAt(0) << 0;
+
+            // Loop over the string of bits
+            for (int i = 1; i < sb.length(); i++) {
+
+                guineaPig[0] = (byte) (guineaPig[0] << 1);
+                guineaPig[0] |= (int) sb.charAt(i) << 0;
+
+                // If it's been 8 bits, write the byte then erase the byte
+                if (i % 8 == 0) {
+                    writer.write(guineaPig, 0, 1);
+                    guineaPig[0] = 0x00;
+                }
+            }
+
+            // If the bits didn't line up precisle
+            if (sb.length() % 8 != 0) {
+                for (int i = 0; i < (8 - (sb.length() % 8)); i++) {
+                    guineaPig[0] = (byte) (guineaPig[0] << 1);
+                    guineaPig[0] |= 0 << 0;
+
+                }
+
+                writer.write(guineaPig, 0, 1);
+            }
+
+            // Close everything
+            reader.close();
+            writer.flush();
+            writer.close();
+
+
+
+            System.out.println("done");
 
 
         } catch (IOException ex) {
             System.out.println("ERROR in writing to the file");
 
+        } catch (Exception e) {
+            System.out.println("Error reading in information");
 
         } finally {
             try {
@@ -93,29 +157,6 @@ public class Encode {
             } catch (Exception ex) {
 
             }
-        }
-
-        Charset charset = Charset.defaultCharset();
-
-        // Construct the methods to retrieve the file's information
-        try (InputStream in = new FileInputStream(sourcefile)) {
-
-            Reader reader = new InputStreamReader(in, charset);
-
-            int data;
-            char character;
-
-            // Iterate over the file
-            while ((data = reader.read()) != -1) {
-                character = (char) data;
-
-
-            }
-
-            reader.close();
-
-        } catch (Exception e) {
-            System.out.println("Error reading in information");
         }
 
     }
@@ -261,7 +302,7 @@ public class Encode {
             depth++;
 
             if (node.getLeft() != null) {
-                traverseToFindHuffmanCodes(nodeList, node.getLeft(), currentCode + "0", depth);;
+                traverseToFindHuffmanCodes(nodeList, node.getLeft(), currentCode + "0", depth);
             }
 
             if (node.getRight() != null){
@@ -348,7 +389,7 @@ public class Encode {
             depth++;
 
             if (node.getLeft() != null) {
-                printTree(node.getLeft(), depth);;
+                printTree(node.getLeft(), depth);
 
             }
 
@@ -367,7 +408,7 @@ public class Encode {
 
             // Get depth of left side of node's children
             if (node.getLeft() != null) {
-                depth1 = greatestDepth(node.getLeft(), depth);;
+                depth1 = greatestDepth(node.getLeft(), depth);
 
             }
 
