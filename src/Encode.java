@@ -19,9 +19,9 @@ public class Encode {
         generateNodes(inputOrder, characterCount, nodes);   // Populate nodes
         nodes.add(0, new Node('\u0000', 1));          // Add our EOF node
 
-        for (int i = 0; i < nodes.size(); i++) {
+        /*for (int i = 0; i < nodes.size(); i++) {
             System.out.println("node char: " + nodes.get(i).getName() + ", frequency: " + nodes.get(i).getValue());
-        }
+        }*/
 
         // Generate Huffman tree, and return its nodes
         nodes = treeGeneration(nodes);
@@ -36,7 +36,7 @@ public class Encode {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getCode());
         }*/
 
-        System.out.println();
+        //System.out.println();
 
         // Sort the Nodes by our custom compareTo method
         Collections.sort(huffmanNodes);
@@ -48,11 +48,11 @@ public class Encode {
         // Generate Canonical Codes
         generateCanonicalCodes(huffmanNodes);
 
-        System.out.println();
+        //System.out.println();
 
-        for (int i = 0; i < huffmanNodes.size(); i++) {
+        /*for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode() + ", frequency: " + huffmanNodes.get(i).getValue());
-        }
+        }*/
 
         // Store for effective lookup
         Map<Character, String> charToCodes = new HashMap<Character, String>();
@@ -98,11 +98,13 @@ public class Encode {
 
             // Iterate over the file, append binary output to StringBuilder
             while ((data = reader.read()) != -1) {
-               sb.append(map.get((char) data));
+                sb.append(map.get((char) data));
             }
 
             // Append the EOF symbol
             sb.append(map.get('\u0000'));
+
+            // System.out.println(sb);
 
             // The byte to add to the writer
             byte[] guineaPig = new byte[] {0x00};
@@ -111,21 +113,16 @@ public class Encode {
             guineaPig[0] = (byte) (guineaPig[0] << 1);
             guineaPig[0] |= Integer.parseInt(sb.substring(0, 1)) << 0;
 
-            //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
-            //System.out.println(s1);
-
             // Loop over the string of bits
             for (int i = 1; i < sb.length(); i++) {
 
                 guineaPig[0] = (byte) (guineaPig[0] << 1);
                 guineaPig[0] |= Integer.parseInt(sb.substring(i, i + 1)) << 0;
 
-                //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
-                //System.out.println(s1);
-
                 // If it's been 8 bits, write the byte then erase the byte
                 if (i % 7 == 0) {
                     writer.write(guineaPig, 0, 1);
+                    //System.out.println(Arrays.toString(guineaPig));
                     guineaPig[0] = 0x00;
                 }
             }
@@ -139,8 +136,6 @@ public class Encode {
                 }
 
                 writer.write(guineaPig, 0, 1);
-                //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
-                //System.out.println(s1);
             }
 
             // Close everything
@@ -149,7 +144,7 @@ public class Encode {
 
 
 
-            System.out.println("\ndone");
+            //System.out.println("\ndone");
 
 
         } catch (IOException ex) {
@@ -216,7 +211,7 @@ public class Encode {
             // Construct the new node
             Node secondSmallest = nodes.remove(index);
 
-            System.out.println("first node: " + smallest.getName() + ", second: " + secondSmallest.getName() + " value: " + smallest.getValue() + secondSmallest.getValue());
+            //System.out.println("first node: " + smallest.getName() + ", second: " + secondSmallest.getName() + " value: " + smallest.getValue() + secondSmallest.getValue());
 
 
             Node newNode = new Node(smallest.getValue() + secondSmallest.getValue());
@@ -391,11 +386,11 @@ public class Encode {
      * @param depth The current depth
      */
     private static void printTree (Node node, int depth) {
-        System.out.println();
+        /*System.out.println();
         for (int i = depth; i > 0; i--) {
             System.out.print("  ");
         }
-        System.out.print(node.getName());
+        System.out.print(node.getName()); */
 
         if (node.getLeft() != null && node.getRight() != null) {
             depth++;

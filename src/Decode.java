@@ -11,13 +11,14 @@ import java.util.Map;
 public class Decode {
     public static void main (String[] args) {
         String sourcefile = args[0];
+        String outputfile = args[1];
 
         Map<String, Character> canonicalCodes = new HashMap<String, Character>();
         List<HuffmanNode> nodes = new ArrayList<HuffmanNode>();
         StringBuilder sb = readInInput(nodes, canonicalCodes, sourcefile);   // Populate with character info
 
         // Generate the new file
-        generateNewFile(nodes, canonicalCodes, sb, "test.txt");
+        generateNewFile(nodes, canonicalCodes, sb, outputfile);
 
     }
 
@@ -34,6 +35,7 @@ public class Decode {
         DataOutputStream writer = null;
 
         String eof = "";
+        System.out.println(sb);
 
         // Find the code for EOF
         for (String key : canonicalCodes.keySet()) {
@@ -52,11 +54,11 @@ public class Decode {
 
                 // If we have a match to a canonical code...
                 if (canonicalCodes.containsKey(currentString.toString())) {
-                    System.out.println("hey!");
+                    System.out.println("string: " + currentString + ", character: " + canonicalCodes.get(currentString.toString()));
 
                     // If that code is the EOF character
                     if (currentString.toString().equals(eof)) {
-                        System.out.println("end");
+                        // System.out.println("wat: " + i + ", " + currentString + ", " + eof);
                         // Halt execution
                         writer.flush();
                         writer.close();
@@ -91,7 +93,6 @@ public class Decode {
      */
     private static StringBuilder readInInput (List<HuffmanNode> nodes, Map<String, Character> canonicalCodes, String sourcefile) {
 
-        Charset charset = Charset.defaultCharset();
         DataInputStream reader = null;
         StringBuilder sb = new StringBuilder();
 
@@ -106,6 +107,7 @@ public class Decode {
 
             Character character;
             int codeLength;
+            int bite;
 
             for (int i = 0; i < number; i++) {
                 // Character
@@ -120,12 +122,19 @@ public class Decode {
 
             // Iterate over the file
             while (true) {
-                int bite = (int) reader.readByte();
+                bite = (int) reader.readByte();
                 String code = Integer.toBinaryString(bite);
+                System.out.println("bite: "+ bite);
 
                 // Handle 2's complement
                 if (code.length() > 8) {
                     code = code.substring(code.length() - 8, code.length());
+
+                } else if (code.length() < 8) {
+                    System.out.println(code);
+                    for (int i = 0; i < (8 - code.length()); i++) {
+                        code = "0" + code;
+                    }
                 }
 
                 sb.append(code);
@@ -147,6 +156,7 @@ public class Decode {
             }
         }
 
+        //System.out.println(sb);
         return sb;
 
     }
@@ -160,6 +170,7 @@ public class Decode {
     private static void generateCanonicalCodes (List<HuffmanNode> huffmanNodes, Map<String, Character> canonicalCodes) {
         int code = 0;
         String stringCode = "";
+        Character character = null;
         int previousCodeLength = huffmanNodes.get(0).getCodeLength();
 
         // Generate codes
@@ -206,9 +217,10 @@ public class Decode {
             code++;
         }
 
-        for (int i = 0; i < huffmanNodes.size(); i++) {
+        /*for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getCharacter() + ", code: " + huffmanNodes.get(i).getCode() + ", code length: " + huffmanNodes.get(i).getCodeLength());
-        }
+        }*/
+
 
     }
 
