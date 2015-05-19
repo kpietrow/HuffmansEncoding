@@ -85,7 +85,6 @@ public class Encode {
             for (int i = 0; i < nodes.size(); i++) {
                 writer.writeByte((int) nodes.get(i).getName());
                 writer.writeByte(nodes.get(i).getFinalCode().length());
-                System.out.println((int) nodes.get(i).getName());
             }
 
             // Write the file information
@@ -100,13 +99,10 @@ public class Encode {
             // Iterate over the file, append binary output to StringBuilder
             while ((data = reader.read()) != -1) {
                sb.append(map.get((char) data));
-                System.out.println(map.get((char) data));
             }
 
             // Append the EOF symbol
             sb.append(map.get('\u0000'));
-
-            System.out.println("the sb: " + sb.toString());
 
             // The byte to add to the writer
             byte[] guineaPig = new byte[] {0x00};
