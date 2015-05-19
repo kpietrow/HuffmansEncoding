@@ -16,20 +16,7 @@ public class Decode {
         // Map<Character, String> canonicalCodes = new HashMap<Character, String>(); // How many of each character in the file
 
         // canonicalCodes = readInInput(canonicalCodes, sourcefile);   // Populate with character counts
-        byte test = 0x00;
 
-        for (int i = 0; i < 20; i++) {
-            String s1 = String.format("%8s", Integer.toBinaryString(test & 0xFF)).replace(' ', '0');
-            System.out.println(s1);
-
-            if (i % 2 == 0) {
-                test = (byte) (test << 1);
-                test |= 1 << 0 ;
-            } else {
-                test = (byte) (test << 1);
-                test |= 0 << 0;
-            }
-        }
 
         /**
          * TODO:

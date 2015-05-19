@@ -13,10 +13,10 @@ public class Encode {
 
         Map<Character, Integer> characterCount = new HashMap<Character, Integer>(); // How many of each character in the file
 
-        characterCount = readInInput(characterCount, sourcefile);   // Populate with character counts
+        List<Character> inputOrder = readInInput(characterCount, sourcefile);   // Populate with character counts
 
         List<Node> nodes = new LinkedList<Node>();  // To hold nodes of characters and values
-        generateNodes(characterCount, nodes);   // Populate nodes
+        generateNodes(inputOrder, characterCount, nodes);   // Populate nodes
         nodes.add(0, new Node('\u0000', 1));          // Add our EOF node
 
         for (int i = 0; i < nodes.size(); i++) {
@@ -50,9 +50,9 @@ public class Encode {
 
         System.out.println();
 
-        /*for (int i = 0; i < huffmanNodes.size(); i++) {
+        for (int i = 0; i < huffmanNodes.size(); i++) {
             System.out.println("node char: " + huffmanNodes.get(i).getName() + ", code: " + huffmanNodes.get(i).getFinalCode() + ", frequency: " + huffmanNodes.get(i).getValue());
-        }*/
+        }
 
         // Store for effective lookup
         Map<Character, String> charToCodes = new HashMap<Character, String>();
@@ -79,12 +79,13 @@ public class Encode {
         try {
             // Get our DataOutputStream all nice and set up
             writer = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputfile)));
-            writer.write(nodes.size());
+            writer.writeByte(nodes.size());
 
             // Write the canonical information
             for (int i = 0; i < nodes.size(); i++) {
                 writer.writeByte((int) nodes.get(i).getName());
                 writer.writeByte(nodes.get(i).getFinalCode().length());
+                System.out.println((int) nodes.get(i).getName());
             }
 
             // Write the file information
@@ -99,32 +100,41 @@ public class Encode {
             // Iterate over the file, append binary output to StringBuilder
             while ((data = reader.read()) != -1) {
                sb.append(map.get((char) data));
+                System.out.println(map.get((char) data));
             }
 
             // Append the EOF symbol
             sb.append(map.get('\u0000'));
+
+            System.out.println("the sb: " + sb.toString());
 
             // The byte to add to the writer
             byte[] guineaPig = new byte[] {0x00};
 
             // Set up it's first bit
             guineaPig[0] = (byte) (guineaPig[0] << 1);
-            guineaPig[0] |= (int) sb.charAt(0) << 0;
+            guineaPig[0] |= Integer.parseInt(sb.substring(0, 1)) << 0;
+
+            //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
+            //System.out.println(s1);
 
             // Loop over the string of bits
             for (int i = 1; i < sb.length(); i++) {
 
                 guineaPig[0] = (byte) (guineaPig[0] << 1);
-                guineaPig[0] |= (int) sb.charAt(i) << 0;
+                guineaPig[0] |= Integer.parseInt(sb.substring(i, i + 1)) << 0;
+
+                //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
+                //System.out.println(s1);
 
                 // If it's been 8 bits, write the byte then erase the byte
-                if (i % 8 == 0) {
+                if (i % 7 == 0) {
                     writer.write(guineaPig, 0, 1);
                     guineaPig[0] = 0x00;
                 }
             }
 
-            // If the bits didn't line up precisle
+            // If the bits didn't line up precisely
             if (sb.length() % 8 != 0) {
                 for (int i = 0; i < (8 - (sb.length() % 8)); i++) {
                     guineaPig[0] = (byte) (guineaPig[0] << 1);
@@ -133,6 +143,8 @@ public class Encode {
                 }
 
                 writer.write(guineaPig, 0, 1);
+                //s1 = String.format("%8s", Integer.toBinaryString(guineaPig[0] & 0xFF)).replace(' ', '0');
+                //System.out.println(s1);
             }
 
             // Close everything
@@ -142,7 +154,7 @@ public class Encode {
 
 
 
-            System.out.println("done");
+            System.out.println("\ndone");
 
 
         } catch (IOException ex) {
@@ -317,12 +329,13 @@ public class Encode {
     /**
      * Creates a list of nodes for tree generation
      *
+     * @param inputOrder    The input order of the characters
      * @param characters    The map of characters to values
      * @param nodes         The to-be-created list of nodes
      */
-    private static void generateNodes (Map<Character, Integer> characters, List<Node> nodes) {
+    private static void generateNodes (List<Character> inputOrder, Map<Character, Integer> characters, List<Node> nodes) {
 
-        for (Character key : characters.keySet()) {
+        for (Character key : inputOrder) {
             nodes.add(new Node(key, characters.get(key)));
         }
 
@@ -336,7 +349,9 @@ public class Encode {
      * @param   sourcefile  The file to pull information from
      * @return              The map of characters with how many times they appear in the file
      */
-    private static Map<Character, Integer> readInInput(Map<Character, Integer> inputMap, String sourcefile) {
+    private static List<Character> readInInput(Map<Character, Integer> inputMap, String sourcefile) {
+
+        List<Character> inputOrder = new ArrayList<Character>();
 
         Charset charset = Charset.defaultCharset();
 
@@ -359,6 +374,7 @@ public class Encode {
                     // Else add it
                 } else {
                     inputMap.put(character, 1);
+                    inputOrder.add(character);
                 }
             }
 
@@ -368,7 +384,7 @@ public class Encode {
             System.out.println("Error reading in information");
         }
 
-        return inputMap;
+        return inputOrder;
     }
 
 
@@ -398,38 +414,4 @@ public class Encode {
             }
         }
     }
-
-    private static int greatestDepth (Node node, int depth) {
-        depth++;
-
-        if (node.getLeft() != null && node.getRight() != null) {
-            int depth1 = 0;
-            int depth2 = 0;
-
-            // Get depth of left side of node's children
-            if (node.getLeft() != null) {
-                depth1 = greatestDepth(node.getLeft(), depth);
-
-            }
-
-            // Get depth of the right side of node's children
-            if (node.getRight() != null){
-                depth2 = greatestDepth(node.getRight(), depth);
-            }
-
-            // Find the greatest depth
-            if (depth1 > depth2) {
-                if (depth < depth1) {
-                    depth = depth1;
-                }
-            } else {
-                if (depth < depth2) {
-                    depth = depth2;
-                }
-            }
-        }
-
-        return depth;
-    }
-
 }
