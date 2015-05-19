@@ -9,7 +9,7 @@ import java.util.*;
 public class Encode {
     public static void main (String[] args) {
         String sourcefile = args[0];
-        // String targetfile = args[1];
+        String outputfile = args[1];
 
         Map<Character, Integer> characterCount = new HashMap<Character, Integer>(); // How many of each character in the file
 
@@ -59,7 +59,7 @@ public class Encode {
         storeCodes(charToCodes, huffmanNodes);
 
         // Write it to the file!
-        writeToFile(charToCodes, huffmanNodes, sourcefile, "test.huf");
+        writeToFile(charToCodes, huffmanNodes, sourcefile, outputfile);
     }
 
     /**
@@ -150,7 +150,6 @@ public class Encode {
             // Close everything
             reader.close();
             writer.flush();
-            writer.close();
 
 
 
@@ -247,6 +246,7 @@ public class Encode {
         String stringCode = "";
         int previousCodeLength = huffmanNodes.get(0).getCode().length();
 
+        // Generate codes
         for (int i = 0; i < huffmanNodes.size(); i++) {
             // Convert the code to binary
             stringCode = Integer.toBinaryString(code);

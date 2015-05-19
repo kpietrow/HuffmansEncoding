@@ -1,9 +1,8 @@
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -11,11 +10,11 @@ import java.util.Map;
  */
 public class Decode {
     public static void main (String[] args) {
-        // String sourcefile = args[0];
+        String sourcefile = args[0];
 
-        // Map<Character, String> canonicalCodes = new HashMap<Character, String>(); // How many of each character in the file
-
-        // canonicalCodes = readInInput(canonicalCodes, sourcefile);   // Populate with character counts
+        Map<String, Character> canonicalCodes = new HashMap<String, Character>();
+        List<HuffmanNode> nodes = new ArrayList<HuffmanNode>();
+        readInInput(nodes, canonicalCodes, sourcefile);   // Populate with character info
 
 
         /**
@@ -31,34 +30,38 @@ public class Decode {
     /**
      * Returns a map of characters mapped to how many times they appear in the input file.
      *
-     * @param   canonicalCodes    A blank map to insert characters into
+     * @param   nodes    A list to insert the character nodes into
+     * @param   canonicalCodes  A map to store the canonical codes
      * @param   sourcefile  The file to pull information from
-     * @return              The map of characters with how many times they appear in the file
-     *
-    private static Map<Character, String> readInInput(Map<Character, String> canonicalCodes, String sourcefile) {
+     */
+    private static void readInInput (List<HuffmanNode> nodes, Map<String, Character> canonicalCodes, String sourcefile) {
 
         Charset charset = Charset.defaultCharset();
+        DataInputStream reader = null;
+        StringBuilder sb = new StringBuilder();
 
         // Construct the methods to retrieve the file's information
-        try (InputStream in = new FileInputStream(sourcefile)) {
+        try {
+            // Create our reader
+            reader = new DataInputStream((new BufferedInputStream(new FileInputStream(sourcefile))));
 
-            Reader reader = new InputStreamReader(in, charset);
+            // Read in those canonical codes
+            byte numCodes = reader.readByte();
+            int number = numCodes & 0xFF;
 
-            int data;
-            char character;
-            int numChars = 0;
+            Character character;
+            int codeLength;
 
-            // Read in the canonical info
-            // Get number of characters
-            if ((data = reader.read()) != -1) {
-                numChars = data;
-            }
-
-            for (int i = 0; i < numChars; i++) {
+            for (int i = 0; i < number; i++) {
                 // Character
-                canonicalCodes.put((char) reader.read(), reader.read());
+                character = (char) reader.readByte();
+                // Code
+                codeLength = reader.readByte();
 
+                nodes.add(new HuffmanNode(character, codeLength));
             }
+
+            generateCanonicalCodes(nodes, canonicalCodes);
 
             // Iterate over the file
             while ((data = reader.read()) != -1) {
@@ -81,5 +84,58 @@ public class Decode {
         }
 
         return inputMap;
-    } */
+    }
+
+    /**
+     *
+     */
+    private static void generateCanonicalCodes (List<HuffmanNode> huffmanNodes, Map<String, Character> canonicalCodes) {
+        int code = 0;
+        String stringCode = "";
+        int previousCodeLength = huffmanNodes.get(0).codeLength;
+
+        // Generate codes
+        for (int i = 0; i < huffmanNodes.size(); i++) {
+            // Convert the code to binary
+            stringCode = Integer.toBinaryString(code);
+
+            // Concat 0's to the front until it's the correct length
+            for (; stringCode.length() < previousCodeLength ;) {
+                stringCode = "0" + stringCode;
+            }
+
+            // Handle if this code is shorter than the previous
+            if (stringCode.length() > huffmanNodes.get(i).getCode().length()) {
+                // Splice the current code string
+                stringCode = stringCode.substring(0, huffmanNodes.get(i).getCode().length());
+
+                int binaryCount = 1;
+                code = 0;
+
+                // Adjust the code for the next node
+                for (int j = stringCode.length() - 1; j >= 0; j--) {
+
+                    // If the string code is 1 at a location, add it's binary equivalent
+                    if (Integer.parseInt(Character.toString(stringCode.charAt(j))) == 1) {
+                        code = code + binaryCount;
+                    }
+
+                    binaryCount = binaryCount * 2;
+                }
+
+            }
+
+            // Update the node
+            huffmanNodes.get(i).setFinalCode(stringCode);
+
+            // Update the previous code length
+            previousCodeLength = huffmanNodes.get(i).getCode().length();
+
+            // Increment the code amount
+            code++;
+        }
+
+    }
+
+
 }
